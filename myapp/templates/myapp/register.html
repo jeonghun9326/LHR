@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>사원 등록 및 수정</title>
+</head>
+<body>
+
+<!-- 탭 버튼 -->
+<div style="margin-bottom: 20px;">
+    <button type="button" onclick="showTab('tab1')">인적사항</button>
+    <button type="button" onclick="showTab('tab2')">경력 및 학력</button>
+    <button type="button" onclick="showTab('tab3')">연봉 및 계좌정보</button>
+</div>
+
+<div style="display: flex;">
+    <!-- 좌측: 등록된 사원 리스트 -->
+    <div style="width: 35%; border-right: 1px solid #ccc; padding-right: 20px;">
+        <a href="{% url 'home' %}">← 메인으로</a><br>
+        <a href="{% url 'employee_list' %}">사원 명부 보기</a>
+        <br><hr><br>
+        <a href="{% url 'register' %}" style="font-weight: bold; color: green;">➕ 신규 사원 등록</a>
+        
+        <hr>
+        <!-- ✅ 검색창 추가 -->
+        <form method="get" action="{% url 'register' %}" style="margin-bottom: 10px;">
+            <input type="text" name="search" placeholder="사번 또는 이름 검색" value="{{ request.GET.search }}" style="width: 100%;">
+            <button type="submit" style="margin-top: 5px;">🔍 검색</button>
+        </form>
+
+        <h3>등록된 사원</h3>
+        <ul>
+            {% for emp in employees %}
+                <li>
+                    <a href="{% url 'register_with_pk' emp.pk %}">{{ emp.employee_id }} - {{ emp.name }}</a>
+                </li>
+            {% empty %}
+                <li>등록된 사원이 없습니다.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- 우측: 탭별 폼 입력 영역 -->
+    <div style="width: 65%; padding-left: 20px;">
+        <h3>{% if form.instance.pk %}사원 수정{% else %}사원 등록{% endif %}</h3>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- 탭1: 인적사항 -->
+            <div id="tab1" class="tab-content" style="display: block;">
+                <div style="display: flex; align-items: flex-start; gap: 20px;">
+                    
+                    <!-- 오른쪽: 사진 업로드 영역 -->
+                    <div style="width: 140px; display: flex; flex-direction: column; align-items: center;">
+                        {% if employee.photo %}
+                            <img id="preview" src="{{ employee.photo.url }}" style="max-height: 140px; display: block; margin-bottom: 8px;">
+                        {% else %}
+                            <img id="preview" style="max-height: 140px; display: none; margin-bottom: 8px;">
+                        {% endif %}
+
+                        <!-- 숨겨진 input -->
+                        <input type="file" name="photo" id="photo_input" accept="image/*" style="display: none;">
+
+                        <!-- 버튼: 사진 선택 -->
+                        <label for="photo_input"
+                            style="cursor: pointer; background: #eee; padding: 6px 10px; border: 1px solid #aaa;
+                                    width: 80%; text-align: center; box-sizing: border-box;">
+                            📁 사진 선택
+                        </label>
+
+                        <!-- 삭제 링크 -->
+                        {% if form.instance.pk and form.instance.photo %}
+                            <div style="margin-top: 6px;">
+                                <a href="{% url 'delete_photo' form.instance.pk %}"
+                                onclick="return confirm('사진을 삭제하시겠습니까?')"
+                                style="font-size: 0.9em; color: red;">
+                                    사진 삭제
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 왼쪽: 텍스트 입력 필드 -->
+                    <div style="flex: 1;">
+                        {{ form.employee_id.label }} {{ form.employee_id }}<br>
+                        {{ form.name.label }} {{ form.name }}<br>
+                        {{ form.employment_type.label }} {{ form.employment_type }}<br>
+                        {{ form.department.label }} {{ form.department }}<br>
+                        {{ form.position.label }} {{ form.position }}<br>
+                        {{ form.position_title.label }} {{ form.position_title }}<br>
+                        {{ form.rank.label }} {{ form.rank }}<br>
+                        {{ form.role.label }} {{ form.role }}<br>
+                        <!-- 직급 기준일 입력 -->
+                        <label for="id_position_start_date">직급 기준일</label><br>
+                        <input type="date" name="position_start_date" id="id_position_start_date"
+                            value="{{ form.instance.position_start_date|date:'Y-m-d' }}"><br>
+                        {{ form.years_worked.label }} {{ form.years_worked }}<br>
+                        <!-- 주민번호 입력 -->
+                        <label for="id_ssn">{{ form.ssn.label }}</label>
+                        <input type="text" id="id_ssn" name="ssn" value="{{ form.ssn.value|default:'' }}"><br>
+                        <label for="id_birth_date">{{ form.birth_date.label }}</label>
+                        {{ form.birth_date }}<br>                        
+                        <label for="id_gender">{{ form.gender.label }}</label>
+                        {{ form.gender }}<br>                        
+                        <!-- 나이: 자동계산 표시 -->
+                        <label for="id_age">{{ form.age.label }}</label>
+                        <input type="text" id="id_age" name="age" value="{{ form.age.value|default:'' }}" readonly><br>
+                        {{ form.phone.label }} {{ form.phone }}<br>
+                        {{ form.email.label }} {{ form.email }}<br>
+                        {{ form.address.label }} {{ form.address }}<br>
+                        {{ form.hire_date.label }} {{ form.hire_date }}<br>
+                        {{ form.resign_date.label }} {{ form.resign_date }}<br>
+                        <label for="id_status">{{ form.status.label }}</label>
+                        {{ form.status }}
+
+                        <div id="leave_fields" style="display: none; margin-top: 10px;">
+                            {{ form.leave_type.label }} {{ form.leave_type }}<br>
+                            <!-- 휴직 시작일 -->
+                            <label for="id_leave_start_date">휴직 시작일</label><br>
+                            <input type="date" name="leave_start_date" id="id_leave_start_date"
+                                value="{{ form.instance.leave_start_date|date:'Y-m-d' }}"><br>
+
+                            <!-- 휴직 종료일 -->
+                            <label for="id_leave_end_date">휴직 종료일</label><br>
+                            <input type="date" name="leave_end_date" id="id_leave_end_date"
+                                value="{{ form.instance.leave_end_date|date:'Y-m-d' }}"><br>
+                        </div>
+                    </div>
+                </div>
+            </div>    
+
+            <!-- 탭2: 경력 및 학력 -->
+            <div id="tab2" class="tab-content" style="display: none;">
+                <h4>경력</h4>
+                <table id="career_table" border="1" style="width:100%; margin-bottom: 10px;">
+                    <thead>
+                        <tr>
+                            <th>회사명</th><th>부서</th><th>직급</th><th>직책</th><th>입사일</th><th>퇴사일</th><th>이직사유</th><th>삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in career_list %}
+                        <tr>
+                            <td><input type="text" name="career_company[]" value="{{ c.company }}"></td>
+                            <td><input type="text" name="career_department[]" value="{{ c.department }}"></td>
+                            <td><input type="text" name="career_rank[]" value="{{ c.rank }}"></td>
+                            <td><input type="text" name="career_position[]" value="{{ c.position }}"></td>
+                            <td><input type="date" name="career_start[]" value="{{ c.start_date|date:'Y-m-d' }}"></td>
+                            <td><input type="date" name="career_end[]" value="{{ c.end_date|date:'Y-m-d' }}"></td>
+                            <td><input type="text" name="career_reason[]" value="{{ c.reason }}"></td>
+                            <td><button type="button" onclick="this.parentElement.parentElement.remove()">삭제</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="button" onclick="addCareerRow()">+ 경력 추가</button>
+
+                <h4>학력</h4>
+                <table id="education_table" border="1" style="width:100%; margin-bottom: 10px;">
+                    <thead>
+                        <tr>
+                            <th>학교명</th><th>전공</th><th>입학일</th><th>졸업일</th><th>삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for edu in education_list %}
+                        <tr>
+                            <td><input type="text" name="edu_school[]" value="{{ edu.school }}"></td>
+                            <td><input type="text" name="edu_major[]" value="{{ edu.major }}"></td>
+                            <td><input type="date" name="edu_start[]" value="{{ edu.start_date|date:'Y-m-d' }}"></td>
+                            <td><input type="date" name="edu_end[]" value="{{ edu.end_date|date:'Y-m-d' }}"></td>
+                            <td><button type="button" onclick="this.parentElement.parentElement.remove()">삭제</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="button" onclick="addEducationRow()">+ 학력 추가</button>
+
+                <h4>자격사항</h4>
+                <table id="cert_table" border="1" style="width:100%; margin-bottom: 10px;">
+                    <thead>
+                        <tr>
+                            <th>자격증명</th><th>등급</th><th>취득일</th><th>만료일</th><th>삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for cert in cert_list %}
+                        <tr>
+                            <td><input type="text" name="cert_name[]" value="{{ cert.name }}"></td>
+                            <td><input type="text" name="cert_level[]" value="{{ cert.level }}"></td>
+                            <td><input type="date" name="cert_acquired[]" value="{{ cert.acquired_date|date:'Y-m-d' }}"></td>
+                            <td><input type="date" name="cert_expiry[]" value="{{ cert.expiry_date|date:'Y-m-d' }}"></td>
+                            <td><button type="button" onclick="this.parentElement.parentElement.remove()">삭제</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="button" onclick="addCertRow()">+ 자격사항 추가</button>
+            </div>
+            
+            <!-- 탭3: 연봉 및 계좌정보 -->
+            <div id="tab3" class="tab-content" style="display: none;">
+                <h4>연봉 및 계좌정보</h4>
+                <table border="1" style="width:100%; margin-bottom: 10px;">
+                    <thead>
+                        <tr>
+                            <th>연봉</th>
+                            <th>월급여</th>
+                            <th>은행코드</th>
+                            <th>은행명</th>
+                            <th>계좌번호</th>
+                            <th>예금주</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="number" name="annual_salary" value="{% if salary_info %}{{ salary_info.annual_salary }}{% endif %}"></td>
+                            <td><input type="number" name="monthly_salary" value="{% if salary_info %}{{ salary_info.monthly_salary }}{% endif %}"></td>
+
+                            <!-- 👇 이 부분이 은행코드 및 은행명 -->
+                            <td>
+                                <select name="bank_code" id="bank_code_select">
+                                    <option value="">-- 선택 --</option>
+                                    {% for code, name in bank_map %}
+                                    <option value="{{ code }}">{{ code }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" name="bank_name" id="bank_name_input"
+                                    value="{% if salary_info %}{{ salary_info.bank_name }}{% endif %}" readonly>
+                            </td>
+
+                            <td><input type="text" name="account_number" value="{% if salary_info %}{{ salary_info.account_number }}{% endif %}"></td>
+                            <td><input type="text" name="account_holder" value="{% if salary_info %}{{ salary_info.account_holder }}{% endif %}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h4>급여 상세 항목</h4>
+                <table border="1" style="width: 100%; margin-bottom: 10px;">
+                    <thead>
+                        <tr>
+                            <th>기본급</th>
+                            <th>고정연장수당</th>
+                            <th>식대</th>
+                            <th>직책수당</th>
+                            <th>자가운전보조금</th>
+                            <th>육아수당</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="number" name="base_salary" value="{% if salary_info %}{{ salary_info.base_salary }}{% endif %}"></td>
+                            <td><input type="number" name="fixed_overtime_pay" value="{% if salary_info %}{{ salary_info.fixed_overtime_pay }}{% endif %}"></td>
+                            <td><input type="number" name="meal_allowance" value="{% if salary_info %}{{ salary_info.meal_allowance }}{% endif %}"></td>
+                            <td><input type="number" name="duty_allowance" value="{% if salary_info %}{{ salary_info.duty_allowance }}{% endif %}"></td>
+                            <td><input type="number" name="commute_allowance" value="{% if salary_info %}{{ salary_info.commute_allowance }}{% endif %}"></td>
+                            <td><input type="number" name="childcare_allowance" value="{% if salary_info %}{{ salary_info.childcare_allowance }}{% endif %}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+          
+            <br>
+            <div style="text-align: center; margin-top: 10px;">
+                <button type="submit" style="position: relative; left: -415px;">
+                    {% if form.instance.pk %}수정하기{% else %}등록하기{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
+
+<!-- 탭 전환 스크립트 -->
+<script>
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+        document.getElementById(tabId).style.display = 'block';
+    }
+    </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ssnInput = document.getElementById("id_ssn");
+        const birthDateInput = document.getElementById("id_birth_date");
+    
+        ssnInput.addEventListener("input", function () {
+            let value = ssnInput.value.replace(/[^0-9]/g, ''); // 숫자만
+    
+            // 자동 하이픈 삽입
+            if (value.length > 6) {
+                value = value.slice(0, 6) + '-' + value.slice(6, 13);
+            }
+            ssnInput.value = value;
+    
+            // 생년월일 자동 입력
+            const digits = value.replace('-', '');
+            if (digits.length >= 7) {
+                const yy = digits.slice(0, 2);
+                const mm = digits.slice(2, 4);
+                const dd = digits.slice(4, 6);
+                const genderCode = digits.charAt(6);
+                let century = (genderCode === '3' || genderCode === '4') ? '20' : '19';
+                const fullDate = `${century}${yy}-${mm}-${dd}`;
+    
+                if (isValidDate(fullDate)) {
+                    birthDateInput.value = fullDate;
+                }
+            }
+        });
+    
+        function isValidDate(dateStr) {
+            const date = new Date(dateStr);
+            return !isNaN(date.getTime()) && dateStr === date.toISOString().slice(0, 10);
+        }
+    });
+    </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const statusField = document.getElementById("id_status");
+        const leaveFields = document.getElementById("leave_fields");
+        const resignDateInput = document.getElementById("id_resign_date");
+    
+        // 휴직 선택 시 휴직 입력칸 표시
+        function toggleLeaveFields() {
+            if (statusField.value === "휴직") {
+                leaveFields.style.display = "block";
+            } else {
+                leaveFields.style.display = "none";
+            }
+        }
+    
+        // 퇴직일 입력 시 상태 자동 퇴직
+        function autoSetStatusFromResignDate() {
+            if (resignDateInput.value) {
+                statusField.value = "퇴직";
+                leaveFields.style.display = "none";  // 휴직칸도 숨김
+            }
+        }
+    
+        // 이벤트 연결
+        statusField.addEventListener("change", toggleLeaveFields);
+        resignDateInput.addEventListener("input", autoSetStatusFromResignDate);
+    
+        // 페이지 로드 시 초기 상태 반영
+        toggleLeaveFields();
+        autoSetStatusFromResignDate();
+    });
+    </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const posStartInput = document.getElementById("id_position_start_date");
+        const yearsField = document.getElementById("id_years_worked");
+    
+        function updateYearsWorked() {
+            const posStartValue = posStartInput.value;
+            if (posStartValue) {
+                const startYear = new Date(posStartValue).getFullYear();
+                const currentYear = new Date().getFullYear();
+                const years = currentYear - startYear + 1;
+                yearsField.value = years > 0 ? years : 1;
+            }
+        }
+    
+        posStartInput.addEventListener("change", updateYearsWorked);
+        updateYearsWorked();  // 페이지 로드 시 자동 계산
+    });
+    </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('id_photo');
+        const preview = document.getElementById('preview');
+    
+        if (input) {
+            input.addEventListener('change', function () {
+                const file = input.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+    </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ssnInput = document.getElementById("id_ssn");
+        const genderInput = document.getElementById("id_gender");
+    
+        ssnInput.addEventListener("input", function () {
+            const value = ssnInput.value.replace(/[^0-9]/g, '');
+            if (value.length >= 7) {
+                const genderCode = parseInt(value.charAt(6));
+                if ([1, 3].includes(genderCode)) {
+                    genderInput.value = "남";
+                } else if ([2, 4].includes(genderCode)) {
+                    genderInput.value = "여";
+                } else {
+                    genderInput.value = "";
+                }
+            } else {
+                genderInput.value = "";
+            }
+        });
+    });
+    </script>
+
+<script>
+    function addCareerRow() {
+        const row = `<tr>
+            <td><input type="text" name="career_company[]"></td>
+            <td><input type="text" name="career_department[]"></td>
+            <td><input type="text" name="career_rank[]"></td>
+            <td><input type="text" name="career_position[]"></td>
+            <td><input type="date" name="career_start[]"></td>
+            <td><input type="date" name="career_end[]"></td>
+            <td><input type="text" name="career_reason[]"></td>
+            <td><button type="button" onclick="this.parentElement.parentElement.remove()">삭제</button></td>
+        </tr>`;
+        document.querySelector("#career_table tbody").insertAdjacentHTML("beforeend", row);
+    }
+    
+    function addEducationRow() {
+        const row = `<tr>
+            <td><input type="text" name="edu_school[]"></td>
+            <td><input type="text" name="edu_major[]"></td>
+            <td><input type="date" name="edu_start[]"></td>
+            <td><input type="date" name="edu_end[]"></td>
+            <td><button type="button" onclick="this.parentElement.parentElement.remove()">삭제</button></td>
+        </tr>`;
+        document.querySelector("#education_table tbody").insertAdjacentHTML("beforeend", row);
+    }
+    
+    function addCertRow() {
+        const row = `<tr>
+            <td><input type="text" name="cert_name[]"></td>
+            <td><input type="text" name="cert_level[]"></td>
+            <td><input type="date" name="cert_acquired[]"></td>
+            <td><input type="date" name="cert_expiry[]"></td>
+            <td><button type="button" onclick="this.parentElement.parentElement.remove()">삭제</button></td>
+        </tr>`;
+        document.querySelector("#cert_table tbody").insertAdjacentHTML("beforeend", row);
+    }
+    </script>
+
+<script>
+    const bankMap = {
+        '004': '국민은행',
+        '011': '농협은행',
+        '020': '우리은행',
+        '088': '신한은행',
+        '081': '하나은행',
+        '003': '기업은행',
+        '023': 'SC제일은행',
+        '027': '한국씨티은행',
+        '039': '경남은행',
+        '034': '광주은행'
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const codeSelect = document.getElementById('bank_code_select');
+        const nameInput = document.getElementById('bank_name_input');
+
+        codeSelect.addEventListener('change', function () {
+            const selectedCode = this.value;
+            nameInput.value = bankMap[selectedCode] || '';
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const rrnInput = document.getElementById("id_ssn");
+        const ageInput = document.getElementById("id_age");
+    
+        rrnInput.addEventListener("input", function () {
+            const raw = rrnInput.value.replace(/-/g, '');
+            if (raw.length >= 7) {
+                const yy = parseInt(raw.slice(0, 2));
+                const mm = parseInt(raw.slice(2, 4));
+                const dd = parseInt(raw.slice(4, 6));
+                const code = raw[6];
+    
+                let year = (code === '1' || code === '2') ? 1900 + yy :
+                           (code === '3' || code === '4') ? 2000 + yy : null;
+                if (!year) {
+                    ageInput.value = '';
+                    return;
+                }
+    
+                const today = new Date();
+                let age = today.getFullYear() - year;
+                if ((today.getMonth() + 1 < mm) || ((today.getMonth() + 1 === mm) && today.getDate() < dd)) {
+                    age--;
+                }
+    
+                if (!isNaN(age)) {
+                    ageInput.value = age;
+                } else {
+                    ageInput.value = '';
+                }
+            } else {
+                ageInput.value = '';
+            }
+        });
+    });
+    </script>
+    
+    

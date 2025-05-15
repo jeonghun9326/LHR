@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>직위 수정</title>
+</head>
+<body>
+    <h2>✏ 직위 수정</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <label>순번</label><br>
+        {{ form.order }}<br><br>
+        <label for="id_name">직위명</label><br>
+        {{ form.name }}<br><br>
+        <button type="submit">💾 저장</button>
+    </form>
+
+    <br>
+    <a href="{% url 'rank_list' %}">← 직위 목록으로 돌아가기</a>
+</body>
+</html>

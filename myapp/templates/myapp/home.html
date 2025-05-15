@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Lotte 인사정보 시스템</title>
+</head>
+<body>
+    <h1>👨‍💼 Lotte 인사정보 시스템</h1>
+    <p>사원 정보를 관리하는 내부 시스템입니다.</p>
+    <ul>
+        <li><a href="{% url 'position_master_list' %}">💼 직급 설정</a></li>
+        <li><a href="{% url 'rank_list' %}">🏷️ 직위 설정</a></li>
+        <li><a href="{% url 'position_list' %}">🎯 직책 설정</a></li>
+        <li><a href="{% url 'department_list' %}">🏢 부서 관리</a></li>
+        <li><a href="{% url 'register' %}">➕ 사원 등록하기</a></li>
+        <li><a href="{% url 'employee_list' %}">📋 사원 명부 보기</a></li>
+    </ul>
+</body>
+</html>
+

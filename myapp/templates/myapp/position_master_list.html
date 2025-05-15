@@ -1,0 +1,41 @@
+<h2>💼 직급 관리</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <label>직급명</label><br>
+    {{ form.name }}<br><br>
+    <button type="submit">➕ 추가</button>
+</form>
+<br>
+<a href="{% url 'home' %}">← 메인으로</a>
+
+<hr>
+
+<h3>📋 직급 목록</h3>
+<table border="1" cellpadding="5" style="width: 100%;">
+    <thead>
+        <tr>
+            <th>순번</th>
+            <th>직급명</th>
+            <th>수정</th>
+            <th>삭제</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for position in positions %}
+        <tr>
+            <td>{{ position.order }}</td>
+            <td>{{ position.name }}</td>
+            <td><a href="{% url 'edit_position_master' position.pk %}">✏ 수정</a></td>
+            <td>
+                <form method="post" action="{% url 'delete_position_master' position.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('삭제하시겠습니까?')">🗑 삭제</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+

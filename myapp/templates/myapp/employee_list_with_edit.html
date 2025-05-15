@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>사원 관리</title>
+    <style>
+        .container {
+            display: flex;
+        }
+        .left-panel {
+            width: 30%;
+            padding: 10px;
+            border-right: 1px solid #ccc;
+        }
+        .right-panel {
+            width: 70%;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>📋 사원 관리</h2>
+
+    <div class="container">
+        <!-- 왼쪽: 사원 리스트 -->
+        <div class="left-panel">
+            <h3>사원 목록</h3>
+            <ul>
+                {% for employee in employees %}
+                <li>
+                    <a href="{% url 'employee_edit' employee.pk %}">
+                        {{ employee.employee_id }} - {{ employee.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- 오른쪽: 입력/수정 폼 -->
+        <div class="right-panel">
+            <h3>사원 정보 입력/수정</h3>
+
+            {% if form %}
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">저장</button>
+            </form>
+            {% else %}
+            <p>수정할 사원을 왼쪽에서 선택하거나 새 사원을 등록하세요.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

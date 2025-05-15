@@ -1,0 +1,35 @@
+<h2>직위 관리</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">추가</button>
+</form>
+<br>
+<a href="{% url 'home' %}">← 메인으로</a>
+
+<table border="1" cellpadding="5">
+    <thead>
+        <tr>
+            <th>순번</th>
+            <th>직위명</th>
+            <th>수정</th>
+            <th>삭제</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rank in ranks %}
+        <tr>
+            <td>{{ rank.order }}</td>
+            <td>{{ rank.name }}</td>
+            <td><a href="{% url 'edit_rank' rank.pk %}">수정</a></td>
+            <td>
+                <form method="post" action="{% url 'delete_rank' rank.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('삭제하시겠습니까?')">삭제</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

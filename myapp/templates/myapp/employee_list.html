@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>사원 목록</title>
+</head>
+<body>
+    <h2>📋 사원 목록</h2>
+
+  
+    <form method="get" action="{% url 'employee_list' %}" style="margin-bottom: 20px;">
+        <!-- 이름/사번 검색 -->
+        <input type="text" name="search" placeholder="이름 또는 사번 검색" value="{{ request.GET.search }}">
+        
+        <!-- 부서 선택 -->
+        <select name="department">
+            <option value="">-- 부서 선택 --</option>
+            {% for dept in department_list %}
+                <option value="{{ dept }}" {% if department_query == dept %}selected{% endif %}>
+                    {{ dept }}
+                </option>
+            {% endfor %}
+        </select>
+    
+        <!-- 입사일/퇴사일/기준일 선택 -->
+        입사일:
+        <input type="date" name="hire_date_from" value="{{ hire_date_from }}">
+        ~
+        <input type="date" name="hire_date_to" value="{{ hire_date_to }}">
+    
+        퇴사일:
+        <input type="date" name="resign_date_from" value="{{ resign_date_from }}">
+        ~
+        <input type="date" name="resign_date_to" value="{{ resign_date_to }}">
+    
+        기준일:
+        <input type="date" name="reference_date" value="{{ request.GET.reference_date }}">
+    
+        <!-- ✅ 검색 버튼은 여기! -->
+        <button type="submit">검색</button>
+    </form>
+    
+    <br>
+    <a href="{% url 'home' %}">← 메인으로</a>
+
+    <!-- ✅ 필터 초기화 버튼 -->
+    <a href="{% url 'employee_list' %}" style="margin-left: 10px;">
+        <button type="button">🔄 초기화</button>
+    </a>
+
+    <a href="{% url 'export_employees_excel' %}?{{ request.GET.urlencode }}">
+        <button type="button">📥 필터 적용된 엑셀 다운로드</button>
+    </a>
+
+
+    <div style="margin-bottom: 15px;">
+        <a href="{% url 'employee_list' %}" style="margin-right:10px;">전체 보기</a>
+        <a href="{% url 'employee_list' %}?filter=active" style="margin-right:10px;">재직자만 보기</a>
+        <a href="{% url 'employee_list' %}?filter=retired">퇴직자만 보기</a>
+    </div>
+    
+    <table border="1" cellpadding="5">
+        <thead>
+            <tr>
+                <th>사번</th>
+                <th>이름</th>
+                <th>성별</th>
+                <th>나이</th>
+                <th>고용형태</th>
+                <th>주민등록번호</th>
+                <th>연락처</th>
+                <th>부서</th>
+                <th>직책</th>
+                <th>직급</th>
+                <th>년차</th>
+                <th>직무</th>
+                <th>입사일</th>   <!-- 추가 -->
+                <th>퇴사일</th>   <!-- 추가 -->
+                <th>상태</th>
+                <th>이메일</th>
+                <th>주소</th>  <!-- ✅ 추가 -->
+                <th>삭제</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td>{{ employee.employee_id }}</td>
+                <td>{{ employee.name }}</td>
+                <td>{{ employee.gender }}</td>
+                + <td>{{ employee.age }}</td>
+                <td>{{ employee.employment_type }}</td>
+                <td>{{ employee.ssn }}</td>
+                <td>{{ employee.phone }}</td>
+                <td>{{ employee.department }}</td>
+                <td>{{ employee.position_title }}</td>
+                <td>{{ employee.position }}</td>
+                <td>{{ employee.years_worked }}</td>
+                <td>{{ employee.role }}</td>
+                <td>{{ employee.hire_date|date:"Y-m-d" }}</td> <!-- 수정 -->
+                <td>
+                    {% if employee.resign_date %}
+                        {{ employee.resign_date|date:"Y-m-d" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if employee.status == '휴직' %}
+                    <span style="color: orange;">휴직</span><br>
+                    <small>
+                        {{ employee.leave_type }}
+                        {% if employee.leave_start_date and employee.leave_end_date %}
+                            ({{ employee.leave_start_date|date:"Y-m-d" }} ~ {{ employee.leave_end_date|date:"Y-m-d" }})
+                        {% else %}
+                            (휴직기간 미입력)
+                        {% endif %}
+                    </small>
+                
+                    {% elif employee.status == '퇴직' %}
+                        <span style="color: gray;">퇴직</span>
+                    {% else %}
+                        <span style="color: green;">재직</span>
+                    {% endif %}
+                </td>
+                <td>{{ employee.email }}</td>
+                <td>{{ employee.address }}</td>
+                <td>
+                    <form action="{% url 'delete_employee' employee.pk %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8">등록된 사원이 없습니다.</td></tr> <!-- 수정: 8칸 -->
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
