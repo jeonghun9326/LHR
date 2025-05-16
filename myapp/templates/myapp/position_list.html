@@ -8,11 +8,10 @@
     <h2>👔 직책 관리</h2>
 
     <!-- 직책 추가 폼 -->
-    <form method="post" style="margin-bottom: 20px;">
+    <form method="post">
         {% csrf_token %}
-        <label for="id_name">직책명</label><br>
-        {{ form.name }}<br><br>
-        <button type="submit">➕ 추가</button>
+        {{ form.as_p }}
+        <button type="submit">추가</button>
     </form>
     <br>
     <a href="{% url 'home' %}">← 메인으로</a>
